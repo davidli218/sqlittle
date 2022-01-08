@@ -13,7 +13,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
         printPrompt();
         readInput(inputBuffer);
 
-        // Process Meta Command
+        /* Process Meta Command */
         if (inputBuffer->buffer[0] == '.') {
             switch (executeMetaCommand(inputBuffer)) {
                 case (META_COMMAND_SUCCESS):
@@ -24,10 +24,17 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
             }
         }
 
+        /* Prepare SQL statement */
         Statement statement;
         switch (prepareStatement(inputBuffer, &statement)) {
             case (PREPARE_SUCCESS):
                 break;
+            case (PREPARE_NEGATIVE_ID):
+                printf("ID must be positive.\n");
+                continue;
+            case (PREPARE_PARAM_TOO_LONG):
+                printf("Parameter is too long.\n");
+                continue;
             case (PREPARE_SYNTAX_ERROR):
                 printf("Syntax error. Could not parse statement.\n");
                 continue;
@@ -36,12 +43,13 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
                 continue;
         }
 
+        /* Execute SQL statement */
         switch (executeStatement(&statement, table)) {
             case (EXECUTE_SUCCESS):
                 printf("Executed.\n");
                 break;
             case (EXECUTE_TABLE_FULL):
-                printf("Error: Table full.\n");
+                printf("Error: Table is full.\n");
                 break;
         }
 
