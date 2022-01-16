@@ -56,15 +56,15 @@ typedef struct {
 // < +++++++++++++++++++++++++++++ Tables +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-Table *dbOpen(const char *);
+Table *openDB(const char *);
 
-void dbClose(Table *);
+void closeDB(Table *);
 
-Pager *pagerOpen(const char *);
+Pager *openPager(const char *);
+
+void flushPager(Pager *, uint32_t, uint32_t);
 
 void *getPage(Pager *, uint32_t);
-
-void pagerFlush(Pager *, uint32_t, uint32_t);
 
 //                                                                           ||
 // < ============================= Tables ============================= > __END

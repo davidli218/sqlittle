@@ -48,7 +48,7 @@ void readInput(InputBuffer *inputBuffer) {
 MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table* table) {
     if (strcmp(inputBuffer->buffer, ".exit") == 0) {
         closeInputBuffer(inputBuffer);
-        dbClose(table);
+        closeDB(table);
         exit(EXIT_SUCCESS);
     } else {
         return META_COMMAND_UNRECOGNIZED;

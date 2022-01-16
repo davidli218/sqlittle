@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
     char *filename = argv[1];
 
-    Table *table = dbOpen(filename);
+    Table *table = openDB(filename);
 
     while (true) {
         printPrompt();
