@@ -29,14 +29,20 @@
 //                                                                           ||
 
 typedef struct {
-    uint32_t numRows;
+    int fileDescriptor;
+    uint32_t fileLength;
     void *pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+    uint32_t numRows;
+    void *pager;
 } Table;
 
 typedef struct {
     uint32_t id;
-    char username[COLUMN_USERNAME_SIZE];
-    char email[COLUMN_EMAIL_SIZE];
+    char username[COLUMN_USERNAME_SIZE + 1];
+    char email[COLUMN_EMAIL_SIZE + 1];  /* 1B for '\0' character */
 } Row;
 
 //                                                                           ||
@@ -50,9 +56,15 @@ typedef struct {
 // < +++++++++++++++++++++++++++++ Tables +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-Table *newTable(void);
+Table *openDB(const char *);
 
-__attribute__((unused)) void freeTable(Table *);
+void closeDB(Table *);
+
+Pager *openPager(const char *);
+
+void flushPager(Pager *, uint32_t, uint32_t);
+
+void *getPage(Pager *, uint32_t);
 
 //                                                                           ||
 // < ============================= Tables ============================= > __END

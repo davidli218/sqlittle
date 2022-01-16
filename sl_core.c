@@ -42,45 +42,24 @@ void readInput(InputBuffer *inputBuffer) {
 // < ============================= CL I/O ============================= > __END
 
 
-// < +++++++++++++++++++++++ Parse Meta Command +++++++++++++++++++++++ > BEGIN
+// < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer) {
+MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table* table) {
     if (strcmp(inputBuffer->buffer, ".exit") == 0) {
         closeInputBuffer(inputBuffer);
+        closeDB(table);
         exit(EXIT_SUCCESS);
     } else {
         return META_COMMAND_UNRECOGNIZED;
     }
 }
 
-//                                                                           ||
-// < ======================= Parse Meta Command ======================= > __END
-
-
-// < +++++++++++++++++++++++ Parse SQL Command +++++++++++++++++++++++ > _BEGIN
-//                                                                           ||
-
 PrepareResult prepareStatement(InputBuffer *inputBuffer, Statement *statement) {
-    if (strncmp(inputBuffer->buffer, "insert", 6) == 0) {
-        statement->type = STATEMENT_INSERT;
-        int args_assigned = sscanf(
-                inputBuffer->buffer, "insert %d %s %s",
-                &(statement->rowToInsert.id),
-                statement->rowToInsert.username,
-                statement->rowToInsert.email
-        );
-
-        if (args_assigned < 3) {
-            return PREPARE_SYNTAX_ERROR;
-        }
-
-        return PREPARE_SUCCESS;
-    }
-    if (strncmp(inputBuffer->buffer, "select", 6) == 0) {
-        statement->type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
-    }
+    if (strncmp(inputBuffer->buffer, "insert", 6) == 0)
+        return prepareInsert(inputBuffer, statement);
+    else if (strncmp(inputBuffer->buffer, "select", 6) == 0)
+        return prepareSelect(statement);
 
     return PREPARE_UNRECOGNIZED;
 }
@@ -95,6 +74,48 @@ ExecuteResult executeStatement(Statement *statement, Table *table) {
 }
 
 //                                                                           ||
+// < ========================= Parse Command ========================= > ___END
+
+
+// < +++++++++++++++++++++++ Parse SQL Command +++++++++++++++++++++++ > _BEGIN
+//                                                                           ||
+
+static PrepareResult prepareInsert(InputBuffer *inputBuffer, Statement *statement) {
+    statement->type = STATEMENT_INSERT;
+
+    strtok(inputBuffer->buffer, " ");  /* Skip keyword insert */
+    char *id_string = strtok(NULL, " ");
+    char *username = strtok(NULL, " ");
+    char *email = strtok(NULL, " ");
+
+    if (id_string == NULL || username == NULL || email == NULL) {
+        return PREPARE_SYNTAX_ERROR;
+    }
+
+    uint32_t id = (uint32_t) strtoul(id_string, NULL, 10);
+    if (id < 0) {
+        return PREPARE_NEGATIVE_ID;
+    }
+    if (strlen(username) > COLUMN_USERNAME_SIZE) {
+        return PREPARE_PARAM_TOO_LONG;
+    }
+    if (strlen(email) > COLUMN_EMAIL_SIZE) {
+        return PREPARE_PARAM_TOO_LONG;
+    }
+
+    statement->rowToInsert.id = id;
+    strcpy(statement->rowToInsert.username, username);
+    strcpy(statement->rowToInsert.email, email);
+
+    return PREPARE_SUCCESS;
+}
+
+static PrepareResult prepareSelect(Statement *statement) {
+    statement->type = STATEMENT_SELECT;
+    return PREPARE_SUCCESS;
+}
+
+//                                                                           ||
 // < ======================= Parse SQL Command ======================= > ___END
 
 
@@ -103,7 +124,7 @@ ExecuteResult executeStatement(Statement *statement, Table *table) {
 
 extern int TABLE_MAX_ROWS;
 
-ExecuteResult executeInsert(Statement *statement, Table *table) {
+static ExecuteResult executeInsert(Statement *statement, Table *table) {
     if (table->numRows >= TABLE_MAX_ROWS) {
         return EXECUTE_TABLE_FULL;
     }
@@ -116,7 +137,7 @@ ExecuteResult executeInsert(Statement *statement, Table *table) {
     return EXECUTE_SUCCESS;
 }
 
-ExecuteResult executeSelect(__attribute__((unused)) Statement *statement, Table *table) {
+static ExecuteResult executeSelect(__attribute__((unused)) Statement *statement, Table *table) {
     Row row;
 
     for (uint32_t i = 0; i < table->numRows; i++) {

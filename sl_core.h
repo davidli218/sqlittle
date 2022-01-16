@@ -33,7 +33,9 @@ typedef enum {
 typedef enum {
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
-    PREPARE_UNRECOGNIZED
+    PREPARE_UNRECOGNIZED,
+    PREPARE_NEGATIVE_ID,
+    PREPARE_PARAM_TOO_LONG
 } PrepareResult;
 
 typedef enum {
@@ -81,21 +83,25 @@ void readInput(InputBuffer *);
 // < ============================= CL I/O ============================= > __END
 
 
-// < +++++++++++++++++++++++ Parse Meta Command +++++++++++++++++++++++ > BEGIN
+// < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *);
+MetaCommandResult executeMetaCommand(InputBuffer *, Table*);
+
+PrepareResult prepareStatement(InputBuffer *, Statement *);
+
+ExecuteResult executeStatement(Statement *, Table *);
 
 //                                                                           ||
-// < ======================= Parse Meta Command ======================= > __END
+// < ========================= Parse Command ========================= > ___END
 
 
 // < +++++++++++++++++++++++ Parse SQL Command +++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-PrepareResult prepareStatement(InputBuffer *, Statement *);
+static PrepareResult prepareInsert(InputBuffer *, Statement *);
 
-ExecuteResult executeInsert(Statement *, Table *);
+static PrepareResult prepareSelect(Statement *);
 
 //                                                                           ||
 // < ======================= Parse SQL Command ======================= > ___END
@@ -104,9 +110,9 @@ ExecuteResult executeInsert(Statement *, Table *);
 // < ++++++++++++++++++++++ Execute SQL Command ++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-ExecuteResult executeSelect(__attribute__((unused)) Statement *, Table *);
+static ExecuteResult executeInsert(Statement *, Table *);
 
-ExecuteResult executeStatement(Statement *, Table *);
+static ExecuteResult executeSelect(__attribute__((unused)) Statement *, Table *);
 
 //                                                                           ||
 // < ====================== Execute SQL Command ====================== > ___END
