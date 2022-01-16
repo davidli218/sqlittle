@@ -29,8 +29,14 @@
 //                                                                           ||
 
 typedef struct {
-    uint32_t numRows;
+    int fileDescriptor;
+    uint32_t fileLength;
     void *pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+    uint32_t numRows;
+    void *pager;
 } Table;
 
 typedef struct {
@@ -50,9 +56,15 @@ typedef struct {
 // < +++++++++++++++++++++++++++++ Tables +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-Table *newTable(void);
+Table *dbOpen(const char *);
 
-__attribute__((unused)) void freeTable(Table *);
+void dbClose(Table *);
+
+Pager *pagerOpen(const char *);
+
+void *getPage(Pager *, uint32_t);
+
+void pagerFlush(Pager *, uint32_t, uint32_t);
 
 //                                                                           ||
 // < ============================= Tables ============================= > __END

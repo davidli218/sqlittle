@@ -86,7 +86,7 @@ void readInput(InputBuffer *);
 // < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *);
+MetaCommandResult executeMetaCommand(InputBuffer *, Table*);
 
 PrepareResult prepareStatement(InputBuffer *, Statement *);
 

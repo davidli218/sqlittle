@@ -4,10 +4,17 @@
 #include "sl_storage.h"
 
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[]) {
+int main(int argc, char *argv[]) {
     InputBuffer *inputBuffer = newInputBuffer();
 
-    Table *table = newTable();
+    if (argc < 2) {
+        printf("Must supply a database filename. (*.ldb)\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char *filename = argv[1];
+
+    Table *table = dbOpen(filename);
 
     while (true) {
         printPrompt();
@@ -15,7 +22,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
         /* Process Meta Command */
         if (inputBuffer->buffer[0] == '.') {
-            switch (executeMetaCommand(inputBuffer)) {
+            switch (executeMetaCommand(inputBuffer, table)) {
                 case (META_COMMAND_SUCCESS):
                     continue;
                 case (META_COMMAND_UNRECOGNIZED):
@@ -52,6 +59,5 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
                 printf("Error: Table is full.\n");
                 break;
         }
-
     }
 }
