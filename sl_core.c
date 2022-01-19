@@ -4,6 +4,7 @@
 #include <string.h>
 #include "sl_core.h"
 #include "sl_storage.h"
+#include "sl_meta_cmd.h"
 
 
 // < +++++++++++++++++++++++++++++ CL I/O +++++++++++++++++++++++++++++ > BEGIN
@@ -45,14 +46,14 @@ void readInput(InputBuffer *inputBuffer) {
 // < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table* table) {
-    if (strcmp(inputBuffer->buffer, ".exit") == 0) {
-        closeInputBuffer(inputBuffer);
-        closeDB(table);
-        exit(EXIT_SUCCESS);
-    } else {
+MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table *table) {
+    if (strcmp(inputBuffer->buffer, ".exit") == 0)
+        return meta_exit(inputBuffer, table);
+    else if (strcmp(inputBuffer->buffer, ".help") == 0)
+        return meta_help();
+    else
         return META_COMMAND_UNRECOGNIZED;
-    }
+
 }
 
 PrepareResult prepareStatement(InputBuffer *inputBuffer, Statement *statement) {

@@ -3,4 +3,8 @@ project(sqlittle C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(sqlittle sqlittle.c sl_core.c sl_core.h sl_storage.c sl_storage.h)
+add_executable(sqlittle sqlittle.c
+        sl_core.c sl_core.h
+        sl_storage.c sl_storage.h
+        sl_meta_cmd.c sl_meta_cmd.h
+        )
