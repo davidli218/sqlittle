@@ -14,7 +14,7 @@
 
 typedef struct {
     char *buffer;
-    size_t bufferLength;
+    size_t bufferSize;
     ssize_t inputLength;
 } InputBuffer;
 

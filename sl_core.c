@@ -13,7 +13,7 @@
 InputBuffer *newInputBuffer() {
     InputBuffer *inputBuffer = malloc(sizeof(InputBuffer));
     inputBuffer->buffer = NULL;
-    inputBuffer->bufferLength = 0;
+    inputBuffer->bufferSize = 0;
     inputBuffer->inputLength = 0;
 
     return inputBuffer;
@@ -28,15 +28,15 @@ void printPrompt() { printf("sqlittle >"); }
 
 void readInput(InputBuffer *inputBuffer) {
     ssize_t bytesRead =
-            getline(&(inputBuffer->buffer), &(inputBuffer->bufferLength), stdin);
+            getline(&(inputBuffer->buffer), &(inputBuffer->bufferSize), stdin);
 
     if (bytesRead <= 0) {
-        printf("Error reading input\n");
+        printf("Errors occurs when reading the command input!\n");
         exit(EXIT_FAILURE);
     }
 
-    inputBuffer->inputLength = bytesRead - 1;
-    inputBuffer->buffer[bytesRead - 1] = 0;
+    inputBuffer->inputLength = bytesRead - 1;  /* Subtract the length of the delimiter */
+    inputBuffer->buffer[bytesRead - 1] = 0;  /* Change the delimiter to null terminator of string */
 }
 
 //                                                                           ||
@@ -51,9 +51,8 @@ MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table *table) {
         return meta_exit(inputBuffer, table);
     else if (strcmp(inputBuffer->buffer, ".help") == 0)
         return meta_help();
-    else
-        return META_COMMAND_UNRECOGNIZED;
 
+    return META_COMMAND_UNRECOGNIZED;
 }
 
 PrepareResult prepareStatement(InputBuffer *inputBuffer, Statement *statement) {

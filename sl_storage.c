@@ -43,6 +43,7 @@ void closeDB(Table *table) {
     Pager *pager = table->pager;
     uint32_t numFullPages = table->numRows / ROWS_PER_PAGE;
 
+    /* Write the full page to the .ldb file and free the page */
     for (uint32_t i = 0; i < numFullPages; i++) {
         if (pager->pages[i] == NULL)
             continue;
@@ -52,27 +53,30 @@ void closeDB(Table *table) {
         pager->pages[i] = NULL;
     }
 
+    /* Write the unfilled page to the .ldb file and free the page */
     uint32_t numAdditionalRows = table->numRows % ROWS_PER_PAGE;
     if (numAdditionalRows > 0) {
-        uint32_t page_num = numFullPages;
-        if (pager->pages[page_num] != NULL) {
-            flushPager(pager, page_num, numAdditionalRows * ROW_SIZE);
-            free(pager->pages[page_num]);
-            pager->pages[page_num] = NULL;
+        uint32_t pageIndex = numFullPages;
+        if (pager->pages[pageIndex] != NULL) {
+            flushPager(pager, pageIndex, numAdditionalRows * ROW_SIZE);
+            free(pager->pages[pageIndex]);
+            pager->pages[pageIndex] = NULL;
         }
     }
 
+    /* close the .ldb file */
     int result = close(pager->fileDescriptor);
     if (result == -1) {
-        printf("Error closing db file.\n");
+        printf("Error: Error occurred when closing .ldb file.\n");
         exit(EXIT_FAILURE);
     }
 
+    /* Wipe the ass */
     for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
         void *page = pager->pages[i];
         if (page) {
+            printf("Error: The memory page[%d] occupied was not properly freed.", i);
             free(page);
-            pager->pages[i] = NULL;
         }
     }
 
@@ -88,7 +92,7 @@ Pager *openPager(const char *fileName) {
 
     /* Failed to open the file */
     if (fd == -1) {
-        printf("Unable to open file: %s\n", fileName);
+        printf("Error: Unable to open file -> %s\n", fileName);
         exit(EXIT_FAILURE);
     }
 
@@ -104,43 +108,45 @@ Pager *openPager(const char *fileName) {
     return pager;
 }
 
-void flushPager(Pager *pager, uint32_t pageNum, uint32_t size) {
-    if (pager->pages[pageNum] == NULL) {
-        printf("Tried to flush a Pager null page\n");
+void flushPager(Pager *pager, uint32_t pageIndex, uint32_t size) {
+    if (pager->pages[pageIndex] == NULL) {
+        printf("Error: Tried to flush a Pager null page.\n");
         exit(EXIT_FAILURE);
     }
 
-    off_t offset = lseek(pager->fileDescriptor, pageNum * PAGE_SIZE, SEEK_SET);
+    off_t offset = lseek(pager->fileDescriptor, pageIndex * PAGE_SIZE, SEEK_SET);
 
     if (offset == -1) {
-        printf("Error seeking: %d\n", errno);
+        printf("Error: seeking: %d\n", errno);
         exit(EXIT_FAILURE);
     }
 
-    ssize_t bytesWritten = write(pager->fileDescriptor, pager->pages[pageNum], size);
+    ssize_t bytesWritten = write(pager->fileDescriptor, pager->pages[pageIndex], size);
 
     if (bytesWritten == -1) {
-        printf("Error writing: %d\n", errno);
+        printf("Error: writing: %d\n", errno);
         exit(EXIT_FAILURE);
     }
 }
 
-void *getPage(Pager *pager, uint32_t pageNum) {
-    if (pageNum > TABLE_MAX_PAGES) {
-        printf("Fetch page number out of bounds. (%d > %d)\n", pageNum,
-               TABLE_MAX_PAGES);
+void *getPage(Pager *pager, uint32_t pageIndex) {
+    if (pageIndex > TABLE_MAX_PAGES - 1) {
+        printf("Error: Fetch page number out of bounds -> (%d > %d)\n",
+               pageIndex, TABLE_MAX_PAGES - 1);
         exit(EXIT_FAILURE);
     }
 
-    if (pager->pages[pageNum] == NULL) {
+    /* Create cache when missed the cache */
+    if (pager->pages[pageIndex] == NULL) {
         void *page = malloc(PAGE_SIZE);
-        uint32_t numPages = pager->fileLength / PAGE_SIZE;
+        uint32_t maxPageIndex = pager->fileLength / PAGE_SIZE;
 
         if (pager->fileLength % PAGE_SIZE)
-            numPages++;
+            maxPageIndex++;
 
-        if (pageNum <= numPages) {
-            lseek(pager->fileDescriptor, pageNum * PAGE_SIZE, SEEK_SET);
+        /* Read data from .ldb file, if data can be found in the .ldb file */
+        if (pageIndex <= maxPageIndex) {
+            lseek(pager->fileDescriptor, pageIndex * PAGE_SIZE, SEEK_SET);
             ssize_t bytesRead = read(pager->fileDescriptor, page, PAGE_SIZE);
             if (bytesRead == -1) {
                 printf("Error reading file: %d\n", errno);
@@ -148,10 +154,10 @@ void *getPage(Pager *pager, uint32_t pageNum) {
             }
         }
 
-        pager->pages[pageNum] = page;
+        pager->pages[pageIndex] = page;
     }
 
-    return pager->pages[pageNum];
+    return pager->pages[pageIndex];
 }
 
 //                                                                           ||
@@ -161,12 +167,12 @@ void *getPage(Pager *pager, uint32_t pageNum) {
 // < ++++++++++++++++++++++++++++++ Rows ++++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-void *trackRow(Table *table, uint32_t rowNum) {
-    uint32_t pageNum = rowNum / ROWS_PER_PAGE;
+void *trackRow(Table *table, uint32_t rowIndex) {
+    uint32_t pageIndex = rowIndex / ROWS_PER_PAGE;
 
-    void *page = getPage(table->pager, pageNum);
+    void *page = getPage(table->pager, pageIndex);
 
-    uint32_t rowOffset = rowNum % ROWS_PER_PAGE;
+    uint32_t rowOffset = rowIndex % ROWS_PER_PAGE;
     uint32_t byteOffset = rowOffset * ROW_SIZE;
 
     return page + byteOffset;

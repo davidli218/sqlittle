@@ -10,7 +10,7 @@ MetaCommandResult meta_exit(InputBuffer *inputBuffer, Table *table) {
     exit(EXIT_SUCCESS);
 }
 
-MetaCommandResult meta_help(void) {
+MetaCommandResult meta_help() {
     printf("Help: No content yet.\n");
     return META_COMMAND_SUCCESS;
 }
