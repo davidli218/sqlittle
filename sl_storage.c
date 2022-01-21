@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include "sl_storage.h"
 
+// #define DEBUG_MODE
 
 // < +++++++++++++++++++++++++++++ Consts +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
@@ -109,6 +110,11 @@ Pager *openPager(const char *fileName) {
 }
 
 void flushPager(Pager *pager, uint32_t pageIndex, uint32_t size) {
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Try to flash the Pager[~]\n");
+    printf("@ \tPager[ PageIndex: %d, Size:%dByte ]\n", pageIndex, size);
+#endif
+
     if (pager->pages[pageIndex] == NULL) {
         printf("Error: Tried to flush a Pager null page.\n");
         exit(EXIT_FAILURE);
@@ -130,6 +136,10 @@ void flushPager(Pager *pager, uint32_t pageIndex, uint32_t size) {
 }
 
 void *getPage(Pager *pager, uint32_t pageIndex) {
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Try to get the Page[Index: %d]\n", pageIndex);
+#endif
+
     if (pageIndex > TABLE_MAX_PAGES - 1) {
         printf("Error: Fetch page number out of bounds -> (%d > %d)\n",
                pageIndex, TABLE_MAX_PAGES - 1);
@@ -155,6 +165,10 @@ void *getPage(Pager *pager, uint32_t pageIndex) {
         }
 
         pager->pages[pageIndex] = page;
+
+#ifdef DEBUG_MODE
+        printf("@ <DEBUG_MODE> Page[Index: %d] is now cached\n", pageIndex);
+#endif
     }
 
     return pager->pages[pageIndex];
@@ -168,6 +182,10 @@ void *getPage(Pager *pager, uint32_t pageIndex) {
 //                                                                           ||
 
 void *trackRow(Table *table, uint32_t rowIndex) {
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Try to track the Row[Index: %d]\n", rowIndex);
+#endif
+
     uint32_t pageIndex = rowIndex / ROWS_PER_PAGE;
 
     void *page = getPage(table->pager, pageIndex);
@@ -175,16 +193,31 @@ void *trackRow(Table *table, uint32_t rowIndex) {
     uint32_t rowOffset = rowIndex % ROWS_PER_PAGE;
     uint32_t byteOffset = rowOffset * ROW_SIZE;
 
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Row[Index: %d] is found at Page[~] | [Address: %p]\n",
+           rowIndex, page + byteOffset);
+    printf("@ \tPage[ PageIndex: %d, RowOffset:%d, ByteOffset:%dByte ]\n",
+           pageIndex, rowOffset, byteOffset);
+#endif
+
     return page + byteOffset;
 }
 
 void writeRow(Row *source, void *destination) {
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Try to write the Row[Address: %p]\n", destination);
+#endif
+
     memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
     memcpy(destination + USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
     memcpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
 void readRow(void *source, Row *destination) {
+#ifdef DEBUG_MODE
+    printf("@ <DEBUG_MODE> Try to read the Row[Address: %p]\n", destination);
+#endif
+
     memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
     memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
     memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
