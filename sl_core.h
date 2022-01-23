@@ -14,7 +14,7 @@
 
 typedef struct {
     char *buffer;
-    size_t bufferLength;
+    size_t bufferSize;
     ssize_t inputLength;
 } InputBuffer;
 
@@ -86,7 +86,7 @@ void readInput(InputBuffer *);
 // < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *, Table*);
+MetaCommandResult executeMetaCommand(InputBuffer *, Table *);
 
 PrepareResult prepareStatement(InputBuffer *, Statement *);
 
@@ -112,7 +112,7 @@ static PrepareResult prepareSelect(Statement *);
 
 static ExecuteResult executeInsert(Statement *, Table *);
 
-static ExecuteResult executeSelect(__attribute__((unused)) Statement *, Table *);
+static ExecuteResult executeSelect(Table *);
 
 //                                                                           ||
 // < ====================== Execute SQL Command ====================== > ___END

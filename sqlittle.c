@@ -14,6 +14,10 @@ int main(int argc, char *argv[]) {
 
     char *filename = argv[1];
 
+    /*
+     * A .ldb file can only contain single table until now.
+     * Multiple tables will be supported in the future.
+     */
     Table *table = openDB(filename);
 
     while (true) {
@@ -26,7 +30,7 @@ int main(int argc, char *argv[]) {
                 case (META_COMMAND_SUCCESS):
                     continue;
                 case (META_COMMAND_UNRECOGNIZED):
-                    printf("Unrecognized meta command '%s'\n", inputBuffer->buffer);
+                    printf("Error: Unrecognized meta command -> '%s'\n", inputBuffer->buffer);
                     continue;
             }
         }
@@ -37,23 +41,23 @@ int main(int argc, char *argv[]) {
             case (PREPARE_SUCCESS):
                 break;
             case (PREPARE_NEGATIVE_ID):
-                printf("ID must be positive.\n");
+                printf("Error: ID must be positive.\n");
                 continue;
             case (PREPARE_PARAM_TOO_LONG):
-                printf("Parameter is too long.\n");
+                printf("Error: Parameter is too long.\n");
                 continue;
             case (PREPARE_SYNTAX_ERROR):
-                printf("Syntax error. Could not parse statement.\n");
+                printf("Error: Syntax error. Could not parse statement.\n");
                 continue;
             case (PREPARE_UNRECOGNIZED):
-                printf("Unrecognized keyword at start of '%s'.\n", inputBuffer->buffer);
+                printf("Error: Unrecognized keyword at start of -> '%s'.\n", inputBuffer->buffer);
                 continue;
         }
 
         /* Execute SQL statement */
         switch (executeStatement(&statement, table)) {
             case (EXECUTE_SUCCESS):
-                printf("Executed.\n");
+                printf("Command executed successfully with 0 error occurred.\n");
                 break;
             case (EXECUTE_TABLE_FULL):
                 printf("Error: Table is full.\n");

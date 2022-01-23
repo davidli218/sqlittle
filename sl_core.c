@@ -4,6 +4,7 @@
 #include <string.h>
 #include "sl_core.h"
 #include "sl_storage.h"
+#include "sl_meta_cmd.h"
 
 
 // < +++++++++++++++++++++++++++++ CL I/O +++++++++++++++++++++++++++++ > BEGIN
@@ -12,7 +13,7 @@
 InputBuffer *newInputBuffer() {
     InputBuffer *inputBuffer = malloc(sizeof(InputBuffer));
     inputBuffer->buffer = NULL;
-    inputBuffer->bufferLength = 0;
+    inputBuffer->bufferSize = 0;
     inputBuffer->inputLength = 0;
 
     return inputBuffer;
@@ -27,15 +28,15 @@ void printPrompt() { printf("sqlittle >"); }
 
 void readInput(InputBuffer *inputBuffer) {
     ssize_t bytesRead =
-            getline(&(inputBuffer->buffer), &(inputBuffer->bufferLength), stdin);
+            getline(&(inputBuffer->buffer), &(inputBuffer->bufferSize), stdin);
 
     if (bytesRead <= 0) {
-        printf("Error reading input\n");
+        printf("Errors occurs when reading the command input!\n");
         exit(EXIT_FAILURE);
     }
 
-    inputBuffer->inputLength = bytesRead - 1;
-    inputBuffer->buffer[bytesRead - 1] = 0;
+    inputBuffer->inputLength = bytesRead - 1;  /* Subtract the length of the delimiter */
+    inputBuffer->buffer[bytesRead - 1] = 0;  /* Change the delimiter to null terminator of string */
 }
 
 //                                                                           ||
@@ -45,14 +46,13 @@ void readInput(InputBuffer *inputBuffer) {
 // < +++++++++++++++++++++++++ Parse Command +++++++++++++++++++++++++ > _BEGIN
 //                                                                           ||
 
-MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table* table) {
-    if (strcmp(inputBuffer->buffer, ".exit") == 0) {
-        closeInputBuffer(inputBuffer);
-        closeDB(table);
-        exit(EXIT_SUCCESS);
-    } else {
-        return META_COMMAND_UNRECOGNIZED;
-    }
+MetaCommandResult executeMetaCommand(InputBuffer *inputBuffer, Table *table) {
+    if (strcmp(inputBuffer->buffer, ".exit") == 0)
+        return meta_exit(inputBuffer, table);
+    else if (strcmp(inputBuffer->buffer, ".help") == 0)
+        return meta_help();
+
+    return META_COMMAND_UNRECOGNIZED;
 }
 
 PrepareResult prepareStatement(InputBuffer *inputBuffer, Statement *statement) {
@@ -69,7 +69,7 @@ ExecuteResult executeStatement(Statement *statement, Table *table) {
         case (STATEMENT_INSERT):
             return executeInsert(statement, table);
         case (STATEMENT_SELECT):
-            return executeSelect(statement, table);
+            return executeSelect(table);
     }
 }
 
@@ -130,20 +130,27 @@ static ExecuteResult executeInsert(Statement *statement, Table *table) {
     }
 
     Row *rowToInsert = &(statement->rowToInsert);
+    Cursor *cursor = tableEnd(table);
 
-    writeRow(rowToInsert, trackRow(table, table->numRows));
+    writeRow(rowToInsert, cursorAddress(cursor));
     table->numRows++;
+
+    free(cursor);
 
     return EXECUTE_SUCCESS;
 }
 
-static ExecuteResult executeSelect(__attribute__((unused)) Statement *statement, Table *table) {
+static ExecuteResult executeSelect(Table *table) {
+    Cursor *cursor = tableBegin(table);
     Row row;
 
-    for (uint32_t i = 0; i < table->numRows; i++) {
-        readRow(trackRow(table, i), &row);
+    while (!(cursor->isEndOfTable)) {
+        readRow(cursorAddress(cursor), &row);
         printRow(&row);
+        cursorMoveForward(cursor);
     }
+
+    free(cursor);
 
     return EXECUTE_SUCCESS;
 }
