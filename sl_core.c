@@ -69,7 +69,7 @@ ExecuteResult executeStatement(Statement *statement, Table *table) {
         case (STATEMENT_INSERT):
             return executeInsert(statement, table);
         case (STATEMENT_SELECT):
-            return executeSelect(statement, table);
+            return executeSelect(table);
     }
 }
 
@@ -130,20 +130,27 @@ static ExecuteResult executeInsert(Statement *statement, Table *table) {
     }
 
     Row *rowToInsert = &(statement->rowToInsert);
+    Cursor *cursor = tableEnd(table);
 
-    writeRow(rowToInsert, trackRow(table, table->numRows));
+    writeRow(rowToInsert, cursorAddress(cursor));
     table->numRows++;
+
+    free(cursor);
 
     return EXECUTE_SUCCESS;
 }
 
-static ExecuteResult executeSelect(__attribute__((unused)) Statement *statement, Table *table) {
+static ExecuteResult executeSelect(Table *table) {
+    Cursor *cursor = tableBegin(table);
     Row row;
 
-    for (uint32_t i = 0; i < table->numRows; i++) {
-        readRow(trackRow(table, i), &row);
+    while (!(cursor->isEndOfTable)) {
+        readRow(cursorAddress(cursor), &row);
         printRow(&row);
+        cursorMoveForward(cursor);
     }
+
+    free(cursor);
 
     return EXECUTE_SUCCESS;
 }

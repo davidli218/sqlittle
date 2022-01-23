@@ -1,6 +1,7 @@
 #ifndef SQLITTLE_SL_STORAGE_H
 #define SQLITTLE_SL_STORAGE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 
@@ -45,6 +46,14 @@ typedef struct {
     char email[COLUMN_EMAIL_SIZE + 1];  /* 1B for '\0' character */
 } Row;
 
+typedef struct {
+    Table *table;
+    uint32_t rowIndex;
+
+    /* Indicates whether the Cursor is one place behind the last element */
+    bool isEndOfTable;
+} Cursor;
+
 //                                                                           ||
 // < ========================== Data Storage ========================== > __END
 
@@ -70,10 +79,23 @@ void *getPage(Pager *, uint32_t);
 // < ============================= Tables ============================= > __END
 
 
-// < ++++++++++++++++++++++++++++++ Rows ++++++++++++++++++++++++++++++ > BEGIN
+// < +++++++++++++++++++++++++++++ Cursor +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-void *trackRow(Table *, uint32_t);
+Cursor *tableBegin(Table *);
+
+Cursor *tableEnd(Table *);
+
+void *cursorAddress(Cursor *cursor);
+
+void cursorMoveForward(Cursor *);
+
+//                                                                           ||
+// < ============================= Cursor ============================= > __END
+
+
+// < ++++++++++++++++++++++++++++++ Rows ++++++++++++++++++++++++++++++ > BEGIN
+//                                                                           ||
 
 void writeRow(Row *, void *);
 

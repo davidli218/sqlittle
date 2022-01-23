@@ -178,30 +178,59 @@ void *getPage(Pager *pager, uint32_t pageIndex) {
 // < ============================= Tables ============================= > __END
 
 
-// < ++++++++++++++++++++++++++++++ Rows ++++++++++++++++++++++++++++++ > BEGIN
+// < +++++++++++++++++++++++++++++ Cursor +++++++++++++++++++++++++++++ > BEGIN
 //                                                                           ||
 
-void *trackRow(Table *table, uint32_t rowIndex) {
-#ifdef DEBUG_MODE
-    printf("@ <DEBUG_MODE> Try to track the Row[Index: %d]\n", rowIndex);
-#endif
+Cursor *tableBegin(Table *table) {
+    Cursor *cursor = (Cursor *) malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->rowIndex = 0;
+    cursor->isEndOfTable = (table->numRows == 0);
 
+    return cursor;
+}
+
+Cursor *tableEnd(Table *table) {
+    Cursor *cursor = (Cursor *) malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->rowIndex = table->numRows;
+    cursor->isEndOfTable = true;
+
+    return cursor;
+}
+
+void *cursorAddress(Cursor *cursor) {
+    uint32_t rowIndex = cursor->rowIndex;
     uint32_t pageIndex = rowIndex / ROWS_PER_PAGE;
 
-    void *page = getPage(table->pager, pageIndex);
+    void *pageAddress = getPage(cursor->table->pager, pageIndex);
 
     uint32_t rowOffset = rowIndex % ROWS_PER_PAGE;
     uint32_t byteOffset = rowOffset * ROW_SIZE;
 
 #ifdef DEBUG_MODE
-    printf("@ <DEBUG_MODE> Row[Index: %d] is found at Page[~] | [Address: %p]\n",
-           rowIndex, page + byteOffset);
+    printf("@ <DEBUG_MODE> Cursor is now at Raw[%d] | Page[~] | [Address: %p]\n",
+           cursor->rowIndex, pageAddress + byteOffset);
     printf("@ \tPage[ PageIndex: %d, RowOffset:%d, ByteOffset:%dByte ]\n",
            pageIndex, rowOffset, byteOffset);
 #endif
 
-    return page + byteOffset;
+    return pageAddress + byteOffset;
 }
+
+void cursorMoveForward(Cursor *cursor) {
+    cursor->rowIndex++;
+
+    if (cursor->rowIndex >= cursor->table->numRows)
+        cursor->isEndOfTable = true;
+}
+
+//                                                                           ||
+// < ============================= Cursor ============================= > __END
+
+
+// < ++++++++++++++++++++++++++++++ Rows ++++++++++++++++++++++++++++++ > BEGIN
+//                                                                           ||
 
 void writeRow(Row *source, void *destination) {
 #ifdef DEBUG_MODE
