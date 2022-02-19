@@ -1,8 +1,10 @@
 .vscode
 .idea
+.vs
 
 CMakeListsPrivate.txt
 cmake-build-*/
 vsc_build/
+out/
 
 .DS_Store
